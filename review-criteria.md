@@ -33,7 +33,7 @@ Neither chart alone is sufficient: the map hides exact rate rankings and poverty
 
 ## [20] How does the layout of these charts promote visual understanding of the data across multiple charts? Do the charts follow a consistent color scheme and are they well aligned with each other to promote better visual comparisons.
 
-Side-by-side 50/50 layout: map (geography) on the left, scatter (crime in context of poverty) on the right — the map leads with the geographic answer; the scatter adds explanatory detail.
+Side-by-side 50/50 layout: scatter (crime in context of poverty) on the left, map (geography) on the right.
 
 Both charts share one sequential crime-rate scale (cream → deep red) with a shared gradient legend. Selected areas use the same accent blue on map polygon borders and scatter dot outlines. Non-selected areas dim uniformly when filtered, so the eye tracks the same neighborhoods across both views.
 
@@ -41,22 +41,22 @@ Both charts share one sequential crime-rate scale (cream → deep red) with a sh
 
 ## [10] Indicate which chart should be graded as a "first" chart. Then justify the choice of this chart type, its axes and marks based on the data variables it shows.
 
-**First chart:** Choropleth map (left).
-
-- **Type:** Choropleth — community area is a geographic unit; only a spatial view shows where crime rates are highest and whether hotspots cluster on the South Side, West Side, or downtown.
-- **Axes:** Implicit geographic projection of Chicago's 77 community areas.
-- **Marks:** Polygons filled by crime rate (annual reported crimes per 1,000 residents, 2019–2024 average).
-
----
-
-## [10] Indicate which chart should be graded as a "second" chart. Then justify the choice of this chart type, its axes and marks based on the data variables it shows.
-
-**Second chart:** Scatter plot (right).
+**First chart:** Scatter plot (left).
 
 - **Type:** Scatter — crime rate and poverty are both continuous; the goal is to compare areas by rate and see whether the highest-crime neighborhoods share a poverty profile.
 - **X-axis:** Household poverty rate (%).
 - **Y-axis:** Annual reported crimes per 1,000 residents (2019–2024 average).
 - **Marks:** One dot per community area, colored by crime rate (shared sequential scale); dashed line shows the poverty–crime trend.
+
+---
+
+## [10] Indicate which chart should be graded as a "second" chart. Then justify the choice of this chart type, its axes and marks based on the data variables it shows.
+
+**Second chart:** Choropleth map (right).
+
+- **Type:** Choropleth — community area is a geographic unit; only a spatial view shows where crime rates are highest and whether hotspots cluster on the South Side, West Side, or downtown.
+- **Axes:** Implicit geographic projection of Chicago's 77 community areas.
+- **Marks:** Polygons filled by crime rate using the same sequential scale as the scatter dots.
 
 ---
 

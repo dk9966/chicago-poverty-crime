@@ -102,19 +102,19 @@ tell whether the highest dots cluster together or sit across the city. Reading
 them together — finding a dark-red area on the map, then locating its dot on the
 scatter — gives the full answer.
 
-**First chart (map).** Choropleth of 77 community areas colored by crime rate
-(annual reported crimes per 1,000 residents, 2019–2024 average). A map is the
-right mark because the question is geographic — only a spatial view shows where
-crime is highest and whether hotspots cluster on the South Side, West Side, or
-downtown.
-
-**Second chart (scatter).** X = household poverty rate (%), Y = annual reported
+**First chart (scatter).** X = household poverty rate (%), Y = annual reported
 crimes per 1,000 residents. Dots colored by crime rate using the same sequential
 scale as the map; a dashed line shows the linear trend. A scatter is the right
 mark because it ranks areas by crime rate and reveals whether high-crime
 neighborhoods share a poverty profile or break the pattern (e.g., the Loop).
 
-**Layout and color.** Map on the left, scatter on the right (50/50). Both use
+**Second chart (map).** Choropleth of 77 community areas colored by crime rate
+(annual reported crimes per 1,000 residents, 2019–2024 average). A map is the
+right mark because the question is geographic — only a spatial view shows where
+crime is highest and whether hotspots cluster on the South Side, West Side, or
+downtown.
+
+**Layout and color.** Scatter on the left, map on the right (50/50). Both use
 one shared sequential scale (cream → deep red) for crime rate, with a gradient
 legend in the controls row. Selected areas use accent blue (`#2563eb`) on both
 the map polygon border and the scatter dot outline.
