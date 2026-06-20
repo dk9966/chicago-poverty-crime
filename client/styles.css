@@ -215,10 +215,6 @@ body {
   fill-opacity: 0.08;
 }
 
-.map-legend--panel {
-  min-height: 12px;
-}
-
 .map-metric {
   position: relative;
   display: inline-grid;

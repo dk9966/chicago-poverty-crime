@@ -68,8 +68,7 @@ async function init() {
     .domain([0, d3.max(areas, (d) => d.povertyPct)])
     .range(POVERTY_COLORS);
 
-  buildScatterLegend();
-  buildMapLegend();
+  buildColorLegend();
   scatterChart = createScatter();
   mapChart = createMap();
   wireControls();
@@ -85,6 +84,26 @@ function metricColor(row) {
   return state.mapMetric === "crimeRate"
     ? crimeColorScale(row.crimeRate)
     : povertyColorScale(row.povertyPct);
+}
+
+// Repaints `selection` with `colorOf`. attrTween only exists on transitions,
+// so the non-animated path must use plain .attr to avoid throwing.
+function applyFill(selection, animate, colorOf) {
+  if (!animate) {
+    selection.attr("fill", colorOf);
+    return;
+  }
+  selection
+    .transition()
+    .duration(MAP_TRANSITION_MS)
+    .ease(d3.easeCubicInOut)
+    .attrTween("fill", function (d) {
+      const interp = d3.interpolateRgb(
+        d3.color(d3.select(this).attr("fill")),
+        d3.color(colorOf(d))
+      );
+      return (t) => interp(t);
+    });
 }
 
 function buildMetricLegend(containerSelector, metricId, gradientId) {
@@ -124,17 +143,13 @@ function buildMetricLegend(containerSelector, metricId, gradientId) {
   legend.append("span").attr("class", "map-legend__label").text("High");
 }
 
-function buildScatterLegend() {
-  buildMetricLegend("#scatter-legend", "scatter-legend-metric", "scatter-panel-gradient");
+function buildColorLegend() {
+  buildMetricLegend("#color-legend", "color-legend-metric", "color-legend-gradient");
 }
 
-function buildMapLegend() {
-  buildMetricLegend("#map-legend", "map-legend-metric", "map-panel-gradient");
-}
-
-function updateLegendGroup(metricId, gradientId, animate = false) {
-  const metricEl = d3.select(metricId);
-  const stops = d3.select(gradientId).selectAll("stop");
+function updateColorLegend(animate = false) {
+  const metricEl = d3.select("#color-legend-metric");
+  const stops = d3.select("#color-legend-gradient").selectAll("stop");
   const nextColors = mapMetricConfig().colors;
 
   if (animate) {
@@ -159,16 +174,11 @@ function updateLegendGroup(metricId, gradientId, animate = false) {
   }
 }
 
-function updateMetricLegends(animate = false) {
-  updateLegendGroup("#scatter-legend-metric", "#scatter-panel-gradient", animate);
-  updateLegendGroup("#map-legend-metric", "#map-panel-gradient", animate);
-}
-
 function setMapMetric(metric, animate = true) {
   if (state.mapMetric === metric) return;
   state.mapMetric = metric;
   updateMapToggle();
-  updateMetricLegends(animate);
+  updateColorLegend(animate);
   update({ animateMetric: animate });
 }
 
@@ -206,6 +216,12 @@ function isHighlighted(d, zx, zy) {
 
 function anyFilterActive() {
   return state.brush || state.mapBrush || state.selectedArea;
+}
+
+function clearAllFilters() {
+  state.selectedArea = null;
+  scatterChart?.clearBrush();
+  mapChart?.clearBrush();
 }
 
 function createScatter() {
@@ -301,16 +317,14 @@ function createScatter() {
       [innerW, innerH],
     ])
     .on("brush end", (event) => {
-      state.brush = event.selection;
       if (event.selection) {
-        mapChart.clearBrush();
-      }
-      if (
-        !event.selection &&
-        event.sourceEvent &&
-        !state.suppressSelectionClear
-      ) {
+        state.brush = event.selection;
         state.selectedArea = null;
+        mapChart.clearBrush();
+      } else if (event.sourceEvent && !state.suppressSelectionClear) {
+        clearAllFilters();
+      } else {
+        state.brush = null;
       }
       update();
     });
@@ -372,19 +386,7 @@ function createScatter() {
         (d) => anyFilter && isHighlighted(d, zx, zy)
       );
 
-    const fillSelection = animate
-      ? dots
-          .transition()
-          .duration(MAP_TRANSITION_MS)
-          .ease(d3.easeCubicInOut)
-      : dots;
-
-    fillSelection.attrTween("fill", function (d) {
-      const previous = d3.color(d3.select(this).attr("fill"));
-      const next = d3.color(metricColor(d));
-      const interp = d3.interpolateRgb(previous, next);
-      return (t) => interp(t);
-    });
+    applyFill(dots, animate, (d) => metricColor(d));
   }
 
   function clearBrush() {
@@ -447,16 +449,14 @@ function createMap() {
       [innerW, innerH],
     ])
     .on("brush end", (event) => {
-      state.mapBrush = event.selection;
       if (event.selection) {
-        scatterChart.clearBrush();
-      }
-      if (
-        !event.selection &&
-        event.sourceEvent &&
-        !state.suppressSelectionClear
-      ) {
+        state.mapBrush = event.selection;
         state.selectedArea = null;
+        scatterChart.clearBrush();
+      } else if (event.sourceEvent && !state.suppressSelectionClear) {
+        clearAllFilters();
+      } else {
+        state.mapBrush = null;
       }
       update();
     });
@@ -485,6 +485,7 @@ function createMap() {
         state.suppressSelectionClear = true;
         gMapBrush.call(mapBrush.move, null);
         state.mapBrush = null;
+        scatterChart.clearBrush();
         state.suppressSelectionClear = false;
       }
       update();
@@ -505,19 +506,7 @@ function createMap() {
       return cls;
     });
 
-    const fillSelection = animate
-      ? paths
-          .transition()
-          .duration(MAP_TRANSITION_MS)
-          .ease(d3.easeCubicInOut)
-      : paths;
-
-    fillSelection.attrTween("fill", function (d) {
-      const previous = d3.color(d3.select(this).attr("fill"));
-      const next = d3.color(metricColor(d.row));
-      const interp = d3.interpolateRgb(previous, next);
-      return (t) => interp(t);
-    });
+    applyFill(paths, animate, (d) => metricColor(d.row));
   }
 
   function clearBrush() {
@@ -532,14 +521,23 @@ function createMap() {
 
 function wireControls() {
   d3.select("#reset").on("click", () => {
-    state.selectedArea = null;
+    clearAllFilters();
     scatterChart.resetView();
-    mapChart.clearBrush();
     update();
   });
 
   d3.selectAll(".map-metric__btn").on("click", function () {
     setMapMetric(d3.select(this).attr("data-metric"));
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!anyFilterActive()) return;
+    const target = event.target;
+    if (target.closest(".dot, .map-area")) return;
+    if (target.closest("#scatter-chart, #map-chart")) return;
+    if (target.closest(".controls__reset, .map-metric__btn")) return;
+    clearAllFilters();
+    update();
   });
 }
 
