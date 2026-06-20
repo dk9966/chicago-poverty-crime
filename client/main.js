@@ -4,8 +4,8 @@
 //   - Scatter: poverty rate vs. annual crimes per 1,000 residents.
 //   - Map:     community areas colored by the same crime rate.
 //
-// Cross-filtering is bi-directional: brushing the scatter filters the map,
-// and clicking a map area highlights the scatter.
+// Cross-filtering is bi-directional: click or brush on the scatter filters the
+// map, and clicking a map area highlights the scatter.
 
 const DATA_URL = "data/areas.json";
 const GEO_URL = "data/community-areas.geojson";
@@ -162,6 +162,15 @@ function createScatter() {
     .join("circle")
     .attr("class", "dot")
     .attr("r", 6)
+    .on("click", (event, d) => {
+      event.stopPropagation();
+      state.selectedArea = state.selectedArea === d.id ? null : d.id;
+      if (state.selectedArea) {
+        gBrush.call(brush.move, null);
+        state.brush = null;
+      }
+      update();
+    })
     .on("mouseover", (event, d) => showScatterTooltip(event, d))
     .on("mousemove", moveTooltip)
     .on("mouseout", hideTooltip);
