@@ -1,6 +1,6 @@
 // Where Is Crime Highest in Chicago? — cross-filtered D3 dashboard.
 //
-// Map colors switch between crime rate and poverty rate; scatter always shows crime.
+// Map and scatter share the active metric for dot/polygon color (crime or poverty).
 //
 // Cross-filtering is bi-directional: click or brush on either chart filters the other.
 
@@ -68,7 +68,7 @@ async function init() {
     .domain([0, d3.max(areas, (d) => d.povertyPct)])
     .range(POVERTY_COLORS);
 
-  buildColorLegend("#scatter-legend", RATE_COLORS, "Low", "High");
+  buildScatterLegend();
   buildMapLegend();
   scatterChart = createScatter();
   mapChart = createMap();
@@ -81,54 +81,22 @@ function mapMetricConfig() {
   return MAP_METRICS[state.mapMetric];
 }
 
-function mapColor(row) {
+function metricColor(row) {
   return state.mapMetric === "crimeRate"
     ? crimeColorScale(row.crimeRate)
     : povertyColorScale(row.povertyPct);
 }
 
-function buildColorLegend(selector, colors, lowLabel, highLabel) {
-  const legend = d3.select(selector);
-  legend.html("");
-
-  const gradientId = `gradient-${selector.replace(/[^a-z0-9]/gi, "")}`;
-  const svg = legend.append("svg").attr("width", 120).attr("height", 12);
-  const linear = svg
-    .append("defs")
-    .append("linearGradient")
-    .attr("id", gradientId)
-    .attr("x1", "0%")
-    .attr("x2", "100%");
-
-  colors.forEach((c, i) => {
-    linear
-      .append("stop")
-      .attr("offset", `${(100 * i) / (colors.length - 1)}%`)
-      .attr("stop-color", c);
-  });
-
-  svg
-    .append("rect")
-    .attr("width", 120)
-    .attr("height", 12)
-    .attr("rx", 4)
-    .style("fill", `url(#${gradientId})`);
-
-  legend.append("span").attr("class", "map-legend__label").text(lowLabel);
-  legend.append("span").attr("class", "map-legend__label").text(highLabel);
-}
-
-function buildMapLegend() {
-  const legend = d3.select("#map-legend");
+function buildMetricLegend(containerSelector, metricId, gradientId) {
+  const legend = d3.select(containerSelector);
   legend.html("");
 
   legend
     .append("span")
     .attr("class", "map-legend__metric")
-    .attr("id", "map-legend-metric")
+    .attr("id", metricId)
     .text(mapMetricConfig().label);
 
-  const gradientId = "map-panel-gradient";
   const svg = legend.append("svg").attr("width", 120).attr("height", 12);
   const linear = svg
     .append("defs")
@@ -156,9 +124,17 @@ function buildMapLegend() {
   legend.append("span").attr("class", "map-legend__label").text("High");
 }
 
-function updateMapLegend(animate = false) {
-  const metricEl = d3.select("#map-legend-metric");
-  const stops = d3.select("#map-panel-gradient").selectAll("stop");
+function buildScatterLegend() {
+  buildMetricLegend("#scatter-legend", "scatter-legend-metric", "scatter-panel-gradient");
+}
+
+function buildMapLegend() {
+  buildMetricLegend("#map-legend", "map-legend-metric", "map-panel-gradient");
+}
+
+function updateLegendGroup(metricId, gradientId, animate = false) {
+  const metricEl = d3.select(metricId);
+  const stops = d3.select(gradientId).selectAll("stop");
   const nextColors = mapMetricConfig().colors;
 
   if (animate) {
@@ -183,12 +159,17 @@ function updateMapLegend(animate = false) {
   }
 }
 
+function updateMetricLegends(animate = false) {
+  updateLegendGroup("#scatter-legend-metric", "#scatter-panel-gradient", animate);
+  updateLegendGroup("#map-legend-metric", "#map-panel-gradient", animate);
+}
+
 function setMapMetric(metric, animate = true) {
   if (state.mapMetric === metric) return;
   state.mapMetric = metric;
   updateMapToggle();
-  updateMapLegend(animate);
-  update({ animateMap: animate });
+  updateMetricLegends(animate);
+  update({ animateMetric: animate });
 }
 
 function updateMapToggle() {
@@ -296,6 +277,7 @@ function createScatter() {
     .join("circle")
     .attr("class", "dot")
     .attr("r", 6)
+    .attr("fill", (d) => metricColor(d))
     .on("click", (event, d) => {
       event.stopPropagation();
       state.selectedArea = state.selectedArea === d.id ? null : d.id;
@@ -359,7 +341,7 @@ function createScatter() {
     };
   }
 
-  function render() {
+  function render(animate = false) {
     const { zx, zy } = zoomedScales();
 
     gx.call(d3.axisBottom(zx).ticks(8).tickFormat((d) => `${d}%`));
@@ -384,12 +366,25 @@ function createScatter() {
     dots
       .attr("cx", (d) => zx(d.povertyPct))
       .attr("cy", (d) => zy(d.crimeRate))
-      .attr("fill", (d) => crimeColorScale(d.crimeRate))
       .classed("dot--dimmed", (d) => anyFilter && !isHighlighted(d, zx, zy))
       .classed(
         "dot--active",
         (d) => anyFilter && isHighlighted(d, zx, zy)
       );
+
+    const fillSelection = animate
+      ? dots
+          .transition()
+          .duration(MAP_TRANSITION_MS)
+          .ease(d3.easeCubicInOut)
+      : dots;
+
+    fillSelection.attrTween("fill", function (d) {
+      const previous = d3.color(d3.select(this).attr("fill"));
+      const next = d3.color(metricColor(d));
+      const interp = d3.interpolateRgb(previous, next);
+      return (t) => interp(t);
+    });
   }
 
   function clearBrush() {
@@ -481,7 +476,7 @@ function createMap() {
     .join("path")
     .attr("class", "map-area")
     .attr("d", (d) => path(d.feature))
-    .attr("fill", (d) => mapColor(d.row))
+    .attr("fill", (d) => metricColor(d.row))
     .on("click", (event, d) => {
       event.stopPropagation();
       state.selectedArea =
@@ -519,7 +514,7 @@ function createMap() {
 
     fillSelection.attrTween("fill", function (d) {
       const previous = d3.color(d3.select(this).attr("fill"));
-      const next = d3.color(mapColor(d.row));
+      const next = d3.color(metricColor(d.row));
       const interp = d3.interpolateRgb(previous, next);
       return (t) => interp(t);
     });
@@ -548,9 +543,9 @@ function wireControls() {
   });
 }
 
-function update({ animateMap = false } = {}) {
-  scatterChart.render();
-  mapChart.render(animateMap);
+function update({ animateMetric = false } = {}) {
+  scatterChart.render(animateMetric);
+  mapChart.render(animateMetric);
   renderStatus();
 }
 

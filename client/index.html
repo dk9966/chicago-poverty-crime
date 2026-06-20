@@ -17,10 +17,6 @@
     </header>
 
     <section class="controls" aria-label="Dashboard filters">
-      <div class="controls__group">
-        <span class="controls__label">Scatter color scale</span>
-        <ul class="map-legend" id="scatter-legend" aria-label="Scatter crime rate color scale"></ul>
-      </div>
       <button class="controls__reset" id="reset" type="button">Reset filters</button>
     </section>
 
@@ -28,10 +24,17 @@
       <section class="panel panel--scatter">
         <header class="panel__head">
           <h2 class="panel__title">1 &middot; Crime rate vs. poverty rate</h2>
-          <p class="panel__hint">
-            Click a dot or drag to select &middot; click empty space to deselect
-            &middot; scroll to zoom &middot; hover for details
-          </p>
+          <div class="panel__meta">
+            <ul
+              class="map-legend map-legend--panel"
+              id="scatter-legend"
+              aria-label="Scatter color scale"
+            ></ul>
+            <p class="panel__hint">
+              Click a dot or drag to select &middot; click empty space to deselect
+              &middot; scroll to zoom &middot; hover for details
+            </p>
+          </div>
         </header>
         <div class="panel__chart" id="scatter-chart"></div>
       </section>
