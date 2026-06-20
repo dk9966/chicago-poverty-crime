@@ -2,7 +2,7 @@
 
 ## [10] Providing a proper URL to the dashboard, and the dashboard appears at that URL without any further user intervention.
 
-**URL:** `[insert deployed GitHub Pages URL]`
+**URL:** `https://dk9966.github.io/chicago-poverty-crime/`
 
 Static D3 site served from the `client/` folder. Opening the URL loads the dashboard immediately — no login, build step, or extra clicks.
 
