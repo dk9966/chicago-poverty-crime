@@ -3,16 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Poverty vs. Crime — do poorer neighborhoods always have more crime?</title>
+    <title>Where Is Crime Highest in Chicago?</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <header class="masthead">
-      <h1 class="masthead__title">Poverty vs. Crime</h1>
+      <h1 class="masthead__title">Where Is Crime Highest in Chicago?</h1>
       <p class="masthead__question">
-        Do poorer Chicago community areas always have higher crime rates? Each dot
-        is one of 77 areas — poverty rate (households below poverty) vs. reported
-        crimes per 1,000 residents per year (2019&ndash;2024).
+        Which community areas have the most reported crime? Each of Chicago&rsquo;s 77
+        areas is shown on the map and as a dot — annual crimes per 1,000 residents
+        (2019&ndash;2024), with poverty rate on the scatter for context.
       </p>
     </header>
 
@@ -25,9 +25,17 @@
     </section>
 
     <main class="dashboard">
+      <section class="panel panel--map">
+        <header class="panel__head">
+          <h2 class="panel__title">1 &middot; Crime rate by community area</h2>
+          <p class="panel__hint">Click an area to highlight &middot; click empty space to deselect</p>
+        </header>
+        <div class="panel__chart" id="map-chart"></div>
+      </section>
+
       <section class="panel panel--scatter">
         <header class="panel__head">
-          <h2 class="panel__title">1 &middot; Poverty rate vs. crime rate</h2>
+          <h2 class="panel__title">2 &middot; Crime rate vs. poverty rate</h2>
           <p class="panel__hint">
             Click a dot or drag to select &middot; click empty space to deselect
             &middot; scroll to zoom &middot; hover for details
@@ -35,21 +43,13 @@
         </header>
         <div class="panel__chart" id="scatter-chart"></div>
       </section>
-
-      <section class="panel panel--map">
-        <header class="panel__head">
-          <h2 class="panel__title">2 &middot; Crime rate by community area</h2>
-          <p class="panel__hint">Click an area to highlight &middot; click empty space to deselect</p>
-        </header>
-        <div class="panel__chart" id="map-chart"></div>
-      </section>
     </main>
 
     <footer class="colophon">
       <span class="colophon__status" id="status"></span>
       <span class="colophon__source">
-        Data: City of Chicago Open Data &middot; poverty (households below poverty),
-        ACS population, reported crimes 2019&ndash;2024.
+        Data: City of Chicago Open Data &middot; reported crimes 2019&ndash;2024,
+        ACS population, household poverty rate.
       </span>
     </footer>
 

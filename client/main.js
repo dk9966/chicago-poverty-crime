@@ -1,11 +1,10 @@
-// Poverty vs. Crime — cross-filtered D3 dashboard.
+// Where Is Crime Highest in Chicago? — cross-filtered D3 dashboard.
 //
 // Two charts share one sequential color scale (crime rate):
-//   - Scatter: poverty rate vs. annual crimes per 1,000 residents.
-//   - Map:     community areas colored by the same crime rate.
+//   - Map:     community areas colored by annual crimes per 1,000 residents.
+//   - Scatter: crime rate vs. poverty rate for the same 77 areas.
 //
-// Cross-filtering is bi-directional: click or brush on the scatter filters the
-// map, and clicking a map area highlights the scatter.
+// Cross-filtering is bi-directional: click or brush on either chart filters the other.
 
 const DATA_URL = "data/areas.json";
 const GEO_URL = "data/community-areas.geojson";

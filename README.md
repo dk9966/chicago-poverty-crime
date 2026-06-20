@@ -1,18 +1,17 @@
-# Poverty vs. Crime — do poorer neighborhoods always have more crime?
+# Where Is Crime Highest in Chicago?
 
 A two-chart, cross-filtered dashboard for the CS416 dashboard assignment.
-Each dot is one Chicago community area (77 total). It asks one question:
+Each dot and polygon is one Chicago community area (77 total). It asks one question:
 
-> **Do poorer Chicago community areas always have higher crime rates?**
+> **Where is crime highest in Chicago?**
 
-The answer needs both charts. The **scatter** shows a positive overall relationship —
-each extra percentage point of household poverty correlates with about 4.4 more
-crimes per 1,000 residents per year — but with wide scatter and clear outliers.
-The **map** shows *where* those outliers sit: the Loop and Near North Side run
-very high crime rates despite modest poverty (commercial traffic), while areas
-like Armour Square and South Lawndale have high poverty but fall below the trend
-line. Poverty and crime move together on average, but **not always** at the
-neighborhood level.
+The answer needs both charts. The **map** shows crime is concentrated on the
+South and West Sides — Fuller Park (322 crimes/1k/yr), West Garfield Park (279),
+Englewood (243), and North Lawndale (239) lead the city. The **scatter** adds
+context: most of those areas also have high poverty, but the Loop ranks sixth
+(207/1k) at just 14.7% poverty, driven by downtown commercial traffic. The map
+answers *where*; the scatter shows *what kind* of high-crime neighborhood each
+area is.
 
 ## What's here
 
@@ -21,7 +20,7 @@ chicago-poverty-crime/
   client/              # the static site (this is what you deploy)
     index.html
     styles.css
-    main.js            # all D3: scatter + map + cross-filtering
+    main.js            # all D3: map + scatter + cross-filtering
     vendor/d3.v7.min.js
     data/
       areas.json               # joined poverty + crime + population (committed)
@@ -87,51 +86,50 @@ Submit that URL for the assignment.
 
 ## Assignment write-up (answers to the rubric)
 
-**The question and its answer.** *Do poorer neighborhoods always have more crime?*
-No. Poverty and crime rate correlate positively across the 77 community areas —
-roughly +4.4 crimes per 1,000 residents per year for each extra point of
-household poverty — but many neighborhoods break the pattern. The Loop (14.7%
-poverty, 207 crimes/1k/yr) and Near North Side (12.9%, 112/1k) sit far above
-the trend despite low poverty, driven by commercial density and visitor traffic.
-Armour Square (40.1% poverty, 79/1k) and South Lawndale (30.7%, 57/1k) have
-high poverty but crime rates well below what the trend would predict. So poorer
-areas tend to have more crime, but geography and land use matter — it's not a
-fixed rule.
+**The question and its answer.** *Where is crime highest in Chicago?*
+On the South and West Sides. Fuller Park leads at 322 crimes per 1,000 residents
+per year, followed by West Garfield Park (279), Englewood (243), and North
+Lawndale (239). The map shows these hotspots clustering south and west of
+downtown. Most rank high on both crime and poverty in the scatter, but the Loop
+(207/1k, 14.7% poverty) is a major exception — high crime driven by commercial
+density, not neighborhood poverty.
 
-**Why two charts are needed.** The scatter alone shows the statistical relationship
-and outliers as abstract dots — you can see the Loop is an exception but not
-*where* it sits in the city. The map alone shows crime-rate geography but hides
-poverty — a dark-red area could be high-crime because of poverty or because of
-downtown activity. Reading them together — a dot far above the trend line, then
-finding that same area on the map — gives the full answer.
+**Why two charts are needed.** The map alone shows geographic concentration but
+not exact rate rankings or poverty context — you can see dark-red areas on the
+South Side but not that Fuller Park beats the Loop. The scatter alone ranks
+areas by crime rate and shows poverty context, but hides geography — you cannot
+tell whether the highest dots cluster together or sit across the city. Reading
+them together — finding a dark-red area on the map, then locating its dot on the
+scatter — gives the full answer.
 
-**First chart (scatter).** X = percent of households below poverty, Y = annual
-reported crimes per 1,000 residents (2019–2024 average). Dots colored by crime
-rate using the same sequential scale as the map; a dashed line shows the linear
-trend. A scatter is the right mark because both variables are continuous and the
-goal is to see correlation strength and outliers across 77 areas.
+**First chart (map).** Choropleth of 77 community areas colored by crime rate
+(annual reported crimes per 1,000 residents, 2019–2024 average). A map is the
+right mark because the question is geographic — only a spatial view shows where
+crime is highest and whether hotspots cluster on the South Side, West Side, or
+downtown.
 
-**Second chart (map).** Choropleth of 77 community areas colored by crime rate
-(same sequential scale as scatter dots). A map is the right mark because community
-area is geographic — only a spatial view shows whether high-rate outliers cluster
-downtown, on the South Side, or elsewhere.
+**Second chart (scatter).** X = household poverty rate (%), Y = annual reported
+crimes per 1,000 residents. Dots colored by crime rate using the same sequential
+scale as the map; a dashed line shows the linear trend. A scatter is the right
+mark because it ranks areas by crime rate and reveals whether high-crime
+neighborhoods share a poverty profile or break the pattern (e.g., the Loop).
 
-**Layout and color.** Charts sit side by side (50/50). Both use one shared
-sequential scale (cream → deep red) for crime rate, with a gradient legend in
-the controls row. Selected areas use accent blue (`#2563eb`) on both the scatter
-dot outline and the map polygon border.
+**Layout and color.** Map on the left, scatter on the right (50/50). Both use
+one shared sequential scale (cream → deep red) for crime rate, with a gradient
+legend in the controls row. Selected areas use accent blue (`#2563eb`) on both
+the map polygon border and the scatter dot outline.
 
-**Details on demand.** Hovering any scatter dot or map polygon shows the community
-area name, poverty %, crime rate, total crimes (2019–2024), population, and
-distance above/below the poverty–crime trend line.
+**Details on demand.** Hovering any map polygon or scatter dot shows the
+community area name, crime rate, poverty %, total crimes (2019–2024),
+population, and distance above/below the poverty–crime trend line.
 
 **Cross-filtering (bi-directional).**
-- *Scatter → map:* drag a rectangle on the scatter (e.g. high-poverty, high-crime
-  quadrant) and the map dims every area outside the selection.
-- *Map → scatter:* click a community area to highlight its dot and dim the rest;
-  click again to clear.
-- *Reset* clears brush and selection.
+- *Map → scatter:* click a community area to highlight its dot and dim the rest.
+- *Scatter → map:* click a dot or drag a rectangle on the scatter; matching areas
+  highlight on the map.
+- *Empty click* on either chart clears the selection; *Reset* clears brush and
+  selection.
 
-**Screenshot suggestion for grading.** Brush the upper-right quadrant (high poverty
-+ high crime) and note how the map highlights South/West Side areas — then click
-the Loop on the map to show a high-crime, low-poverty outlier above the trend line.
+**Screenshot suggestion for grading.** Click Fuller Park on the map to show the
+highest-crime area, then note on the scatter that it sits high on both axes —
+contrast with the Loop, a high-crime dot with low poverty far above the trend line.
