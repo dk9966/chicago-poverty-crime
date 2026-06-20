@@ -1,0 +1,271 @@
+:root {
+  --color-ink: #1b1f24;
+  --color-muted: #5b6570;
+  --color-faint: #8a939d;
+  --color-line: #e2e6ea;
+  --color-surface: #ffffff;
+  --color-bg: #f4f6f8;
+  --color-accent: #2563eb;
+  --radius: 10px;
+  --shadow: 0 1px 2px rgba(27, 31, 36, 0.06), 0 6px 18px rgba(27, 31, 36, 0.06);
+  --font: "Inter", "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 28px clamp(16px, 4vw, 56px) 40px;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+.masthead {
+  max-width: 1240px;
+  margin: 0 auto 20px;
+}
+
+.masthead__title {
+  margin: 0;
+  font-size: clamp(1.7rem, 3.4vw, 2.4rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.masthead__question {
+  margin: 6px 0 0;
+  max-width: 68ch;
+  color: var(--color-muted);
+  font-size: 1.02rem;
+}
+
+.controls {
+  max-width: 1240px;
+  margin: 0 auto 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 24px;
+}
+
+.controls__group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.controls__label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.controls__reset {
+  margin-left: auto;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 7px 14px;
+  border: 1px solid var(--color-line);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.controls__reset:hover {
+  border-color: var(--color-faint);
+  color: var(--color-ink);
+}
+
+.map-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.map-legend__label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-faint);
+}
+
+.dashboard {
+  max-width: 1240px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 980px) {
+  .dashboard {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px 18px 8px;
+  min-width: 0;
+}
+
+.panel__head {
+  margin-bottom: 6px;
+}
+
+.panel__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.panel__hint {
+  margin: 3px 0 0;
+  font-size: 0.8rem;
+  color: var(--color-faint);
+}
+
+.panel__chart {
+  width: 100%;
+}
+
+.panel__chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.axis text {
+  fill: var(--color-muted);
+  font-size: 11px;
+}
+
+.axis path,
+.axis line {
+  stroke: var(--color-line);
+}
+
+.axis__label {
+  fill: var(--color-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.chart__grid line {
+  stroke: var(--color-line);
+  stroke-opacity: 0.7;
+}
+
+.chart__trend {
+  stroke: var(--color-faint);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+  fill: none;
+}
+
+.dot {
+  stroke: var(--color-surface);
+  stroke-width: 1.2;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.dot--dimmed {
+  opacity: 0.15;
+}
+
+.dot--active {
+  stroke: var(--color-accent);
+  stroke-width: 2;
+}
+
+.brush .selection {
+  stroke: var(--color-accent);
+  stroke-opacity: 0.55;
+  fill: var(--color-accent);
+  fill-opacity: 0.08;
+}
+
+.map-area {
+  stroke: var(--color-surface);
+  stroke-width: 0.6;
+  cursor: pointer;
+  transition: opacity 0.15s, stroke-width 0.15s;
+}
+
+.map-area--dimmed {
+  opacity: 0.35;
+}
+
+.map-area--selected {
+  stroke: var(--color-accent);
+  stroke-width: 2.2;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 10;
+  min-width: 190px;
+  max-width: 280px;
+  padding: 10px 12px;
+  background: var(--color-ink);
+  color: #fff;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.tooltip--visible {
+  opacity: 1;
+}
+
+.tooltip__title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+}
+
+.tooltip__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  color: #d6dbe1;
+}
+
+.tooltip__row strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+.colophon {
+  max-width: 1240px;
+  margin: 18px auto 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--color-faint);
+}
+
+.colophon__status {
+  font-weight: 600;
+  color: var(--color-muted);
+}

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Poverty vs. Crime — do poorer neighborhoods always have more crime?</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="masthead">
+      <h1 class="masthead__title">Poverty vs. Crime</h1>
+      <p class="masthead__question">
+        Do poorer Chicago community areas always have higher crime rates? Each dot
+        is one of 77 areas — poverty rate (households below poverty) vs. reported
+        crimes per 1,000 residents per year (2019&ndash;2024).
+      </p>
+    </header>
+
+    <section class="controls" aria-label="Dashboard filters">
+      <div class="controls__group">
+        <span class="controls__label">Crime rate scale</span>
+        <ul class="map-legend" id="map-legend" aria-label="Crime rate color scale"></ul>
+      </div>
+      <button class="controls__reset" id="reset" type="button">Reset filters</button>
+    </section>
+
+    <main class="dashboard">
+      <section class="panel panel--scatter">
+        <header class="panel__head">
+          <h2 class="panel__title">1 &middot; Poverty rate vs. crime rate</h2>
+          <p class="panel__hint">
+            Drag to select areas &middot; scroll to zoom &middot; hover for details
+          </p>
+        </header>
+        <div class="panel__chart" id="scatter-chart"></div>
+      </section>
+
+      <section class="panel panel--map">
+        <header class="panel__head">
+          <h2 class="panel__title">2 &middot; Crime rate by community area</h2>
+          <p class="panel__hint">Click an area to highlight it on the scatter</p>
+        </header>
+        <div class="panel__chart" id="map-chart"></div>
+      </section>
+    </main>
+
+    <footer class="colophon">
+      <span class="colophon__status" id="status"></span>
+      <span class="colophon__source">
+        Data: City of Chicago Open Data &middot; poverty (households below poverty),
+        ACS population, reported crimes 2019&ndash;2024.
+      </span>
+    </footer>
+
+    <div class="tooltip" id="tooltip" role="status" aria-hidden="true"></div>
+
+    <script src="vendor/d3.v7.min.js"></script>
+    <script type="module" src="main.js"></script>
+  </body>
+</html>
