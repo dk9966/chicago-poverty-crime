@@ -18,6 +18,7 @@ const fmtPct = (v) => `${v.toFixed(1)}%`;
 
 const state = {
   brush: null,
+  mapBrush: null,
   selectedArea: null,
   transform: d3.zoomIdentity,
   suppressSelectionClear: false,
@@ -31,6 +32,7 @@ let geo;
 let colorScale;
 let scatterChart;
 let mapChart;
+let areaCentroids = new Map();
 
 init();
 
@@ -59,7 +61,20 @@ function isHighlighted(d, zx, zy) {
     const py = zy(d.crimeRate);
     if (px < x0 || px > x1 || py < y0 || py > y1) return false;
   }
+  if (state.mapBrush) {
+    const [[x0, y0], [x1, y1]] = state.mapBrush;
+    const [cx, cy] = areaCentroids.get(d.id);
+    const xMin = Math.min(x0, x1);
+    const xMax = Math.max(x0, x1);
+    const yMin = Math.min(y0, y1);
+    const yMax = Math.max(y0, y1);
+    if (cx < xMin || cx > xMax || cy < yMin || cy > yMax) return false;
+  }
   return true;
+}
+
+function anyFilterActive() {
+  return state.brush || state.mapBrush || state.selectedArea;
 }
 
 function buildMapLegend() {
@@ -91,11 +106,6 @@ function buildMapLegend() {
 
   legend.append("span").attr("class", "map-legend__label").text("Low");
   legend.append("span").attr("class", "map-legend__label").text("High");
-}
-
-function clearSelection() {
-  state.selectedArea = null;
-  update();
 }
 
 function createScatter() {
@@ -174,6 +184,7 @@ function createScatter() {
         state.suppressSelectionClear = true;
         gBrush.call(brush.move, null);
         state.brush = null;
+        mapChart.clearBrush();
         state.suppressSelectionClear = false;
       }
       update();
@@ -190,6 +201,9 @@ function createScatter() {
     ])
     .on("brush end", (event) => {
       state.brush = event.selection;
+      if (event.selection) {
+        mapChart.clearBrush();
+      }
       if (
         !event.selection &&
         event.sourceEvent &&
@@ -247,7 +261,7 @@ function createScatter() {
       .attr("x2", zx(x.domain()[1]))
       .attr("y2", zy(regression.predict(x.domain()[1])));
 
-    const anyFilter = state.brush || state.selectedArea;
+    const anyFilter = anyFilterActive();
     dots
       .attr("cx", (d) => zx(d.povertyPct))
       .attr("cy", (d) => zy(d.crimeRate))
@@ -259,14 +273,20 @@ function createScatter() {
       );
   }
 
-  function resetView() {
-    svg.call(zoom.transform, d3.zoomIdentity);
+  function clearBrush() {
+    state.suppressSelectionClear = true;
     gBrush.call(brush.move, null);
-    state.transform = d3.zoomIdentity;
     state.brush = null;
+    state.suppressSelectionClear = false;
   }
 
-  return { render, resetView, zoomedScales };
+  function resetView() {
+    svg.call(zoom.transform, d3.zoomIdentity);
+    clearBrush();
+    state.transform = d3.zoomIdentity;
+  }
+
+  return { render, resetView, clearBrush, zoomedScales };
 }
 
 function createMap() {
@@ -290,18 +310,47 @@ function createMap() {
     .attr("class", "map-bg")
     .attr("width", innerW)
     .attr("height", innerH)
-    .attr("fill", "transparent")
-    .on("click", () => clearSelection());
+    .attr("fill", "transparent");
 
   const projection = d3.geoMercator().fitSize([innerW, innerH], geo);
   const path = d3.geoPath().projection(projection);
+  const gMapBrush = root.append("g").attr("class", "brush");
   const gAreas = root.append("g");
 
   const areaById = new Map(areas.map((d) => [d.id, d]));
 
+  geo.features.forEach((feature) => {
+    const areaId = Number(feature.properties.area);
+    if (areaById.has(areaId)) {
+      areaCentroids.set(areaId, path.centroid(feature));
+    }
+  });
+
+  const mapBrush = d3
+    .brush()
+    .extent([
+      [0, 0],
+      [innerW, innerH],
+    ])
+    .on("brush end", (event) => {
+      state.mapBrush = event.selection;
+      if (event.selection) {
+        scatterChart.clearBrush();
+      }
+      if (
+        !event.selection &&
+        event.sourceEvent &&
+        !state.suppressSelectionClear
+      ) {
+        state.selectedArea = null;
+      }
+      update();
+    });
+  gMapBrush.call(mapBrush);
+
   function render() {
     const { zx, zy } = scatterChart.zoomedScales();
-    const anyFilter = state.brush || state.selectedArea;
+    const anyFilter = anyFilterActive();
 
     const features = geo.features
       .map((feature) => {
@@ -328,6 +377,12 @@ function createMap() {
         event.stopPropagation();
         state.selectedArea =
           state.selectedArea === d.areaId ? null : d.areaId;
+        if (state.selectedArea) {
+          state.suppressSelectionClear = true;
+          gMapBrush.call(mapBrush.move, null);
+          state.mapBrush = null;
+          state.suppressSelectionClear = false;
+        }
         update();
       })
       .on("mouseover", (event, d) => showMapTooltip(event, d.row))
@@ -335,13 +390,21 @@ function createMap() {
       .on("mouseout", hideTooltip);
   }
 
-  return { render };
+  function clearBrush() {
+    state.suppressSelectionClear = true;
+    gMapBrush.call(mapBrush.move, null);
+    state.mapBrush = null;
+    state.suppressSelectionClear = false;
+  }
+
+  return { render, clearBrush };
 }
 
 function wireControls() {
   d3.select("#reset").on("click", () => {
     state.selectedArea = null;
     scatterChart.resetView();
+    mapChart.clearBrush();
     update();
   });
 }
@@ -359,7 +422,7 @@ function renderStatus() {
   if (state.selectedArea) {
     parts.push(areas.find((d) => d.id === state.selectedArea).name);
   }
-  if (state.brush) parts.push("brushed");
+  if (state.brush || state.mapBrush) parts.push("brushed");
   if (highlighted.length) {
     parts.push(
       `avg rate ${fmtRate(d3.mean(highlighted, (d) => d.crimeRate))}/1k`
