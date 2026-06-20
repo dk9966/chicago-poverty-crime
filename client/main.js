@@ -1,8 +1,6 @@
 // Where Is Crime Highest in Chicago? — cross-filtered D3 dashboard.
 //
-// Two charts share one sequential color scale (crime rate):
-//   - Map:     community areas colored by annual crimes per 1,000 residents.
-//   - Scatter: crime rate vs. poverty rate for the same 77 areas.
+// Map colors switch between crime rate and poverty rate; scatter always shows crime.
 //
 // Cross-filtering is bi-directional: click or brush on either chart filters the other.
 
@@ -10,7 +8,9 @@ const DATA_URL = "data/areas.json";
 const GEO_URL = "data/community-areas.geojson";
 
 const RATE_COLORS = ["#fef0d9", "#fdcc8a", "#fc8d59", "#e34a33", "#b30000"];
+const POVERTY_COLORS = ["#edf8fb", "#b2df8a", "#66c2a4", "#2ca25f", "#006d2c"];
 const ACCENT = "#2563eb";
+const MAP_TRANSITION_MS = 500;
 
 const fmtCount = d3.format(",");
 const fmtRate = (v) => v.toFixed(1);
@@ -20,6 +20,7 @@ const state = {
   brush: null,
   mapBrush: null,
   selectedArea: null,
+  mapMetric: "crimeRate",
   transform: d3.zoomIdentity,
   suppressSelectionClear: false,
 };
@@ -29,10 +30,26 @@ const statusEl = d3.select("#status");
 
 let areas = [];
 let geo;
-let colorScale;
+let crimeColorScale;
+let povertyColorScale;
 let scatterChart;
 let mapChart;
 let areaCentroids = new Map();
+
+const MAP_METRICS = {
+  crimeRate: {
+    label: "Crime rate",
+    value: (d) => d.crimeRate,
+    format: (v) => `${fmtRate(v)} / 1k`,
+    colors: RATE_COLORS,
+  },
+  povertyPct: {
+    label: "Poverty rate",
+    value: (d) => d.povertyPct,
+    format: (v) => fmtPct(v),
+    colors: POVERTY_COLORS,
+  },
+};
 
 init();
 
@@ -41,18 +58,151 @@ async function init() {
   geo = await d3.json(GEO_URL);
   areas = payload.areas;
 
-  colorScale = d3
+  crimeColorScale = d3
     .scaleQuantize()
     .domain([0, d3.max(areas, (d) => d.crimeRate)])
     .range(RATE_COLORS);
 
+  povertyColorScale = d3
+    .scaleQuantize()
+    .domain([0, d3.max(areas, (d) => d.povertyPct)])
+    .range(POVERTY_COLORS);
+
+  buildColorLegend("#scatter-legend", RATE_COLORS, "Low", "High");
   buildMapLegend();
   scatterChart = createScatter();
   mapChart = createMap();
   wireControls();
+  updateMapToggle();
   update();
 }
 
+function mapMetricConfig() {
+  return MAP_METRICS[state.mapMetric];
+}
+
+function mapColor(row) {
+  return state.mapMetric === "crimeRate"
+    ? crimeColorScale(row.crimeRate)
+    : povertyColorScale(row.povertyPct);
+}
+
+function buildColorLegend(selector, colors, lowLabel, highLabel) {
+  const legend = d3.select(selector);
+  legend.html("");
+
+  const gradientId = `gradient-${selector.replace(/[^a-z0-9]/gi, "")}`;
+  const svg = legend.append("svg").attr("width", 120).attr("height", 12);
+  const linear = svg
+    .append("defs")
+    .append("linearGradient")
+    .attr("id", gradientId)
+    .attr("x1", "0%")
+    .attr("x2", "100%");
+
+  colors.forEach((c, i) => {
+    linear
+      .append("stop")
+      .attr("offset", `${(100 * i) / (colors.length - 1)}%`)
+      .attr("stop-color", c);
+  });
+
+  svg
+    .append("rect")
+    .attr("width", 120)
+    .attr("height", 12)
+    .attr("rx", 4)
+    .style("fill", `url(#${gradientId})`);
+
+  legend.append("span").attr("class", "map-legend__label").text(lowLabel);
+  legend.append("span").attr("class", "map-legend__label").text(highLabel);
+}
+
+function buildMapLegend() {
+  const legend = d3.select("#map-legend");
+  legend.html("");
+
+  legend
+    .append("span")
+    .attr("class", "map-legend__metric")
+    .attr("id", "map-legend-metric")
+    .text(mapMetricConfig().label);
+
+  const gradientId = "map-panel-gradient";
+  const svg = legend.append("svg").attr("width", 120).attr("height", 12);
+  const linear = svg
+    .append("defs")
+    .append("linearGradient")
+    .attr("id", gradientId)
+    .attr("x1", "0%")
+    .attr("x2", "100%");
+
+  mapMetricConfig().colors.forEach((c, i) => {
+    linear
+      .append("stop")
+      .attr("offset", `${(100 * i) / (mapMetricConfig().colors.length - 1)}%`)
+      .attr("stop-color", c);
+  });
+
+  svg
+    .append("rect")
+    .attr("class", "map-legend__swatch")
+    .attr("width", 120)
+    .attr("height", 12)
+    .attr("rx", 4)
+    .style("fill", `url(#${gradientId})`);
+
+  legend.append("span").attr("class", "map-legend__label").text("Low");
+  legend.append("span").attr("class", "map-legend__label").text("High");
+}
+
+function updateMapLegend(animate = false) {
+  const metricEl = d3.select("#map-legend-metric");
+  const stops = d3.select("#map-panel-gradient").selectAll("stop");
+  const nextColors = mapMetricConfig().colors;
+
+  if (animate) {
+    metricEl
+      .transition()
+      .duration(200)
+      .style("opacity", 0)
+      .on("end", () => {
+        metricEl.text(mapMetricConfig().label);
+        metricEl.transition().duration(200).style("opacity", 1);
+      });
+
+    stops
+      .data(nextColors)
+      .transition()
+      .duration(MAP_TRANSITION_MS)
+      .ease(d3.easeCubicInOut)
+      .attr("stop-color", (c) => c);
+  } else {
+    metricEl.text(mapMetricConfig().label).style("opacity", 1);
+    stops.data(nextColors).attr("stop-color", (c) => c);
+  }
+}
+
+function setMapMetric(metric, animate = true) {
+  if (state.mapMetric === metric) return;
+  state.mapMetric = metric;
+  updateMapToggle();
+  updateMapLegend(animate);
+  update({ animateMap: animate });
+}
+
+function updateMapToggle() {
+  d3.selectAll(".map-metric__btn").classed(
+    "map-metric__btn--active",
+    function () {
+      return d3.select(this).attr("data-metric") === state.mapMetric;
+    }
+  );
+  d3.select("#map-metric-indicator").classed(
+    "map-metric__indicator--poverty",
+    state.mapMetric === "povertyPct"
+  );
+}
 function isHighlighted(d, zx, zy) {
   if (state.selectedArea && d.id !== state.selectedArea) return false;
   if (state.brush) {
@@ -75,37 +225,6 @@ function isHighlighted(d, zx, zy) {
 
 function anyFilterActive() {
   return state.brush || state.mapBrush || state.selectedArea;
-}
-
-function buildMapLegend() {
-  const legend = d3.select("#map-legend");
-  legend.html("");
-
-  const gradientId = "rate-gradient";
-  const svg = legend.append("svg").attr("width", 120).attr("height", 12);
-  const linear = svg
-    .append("defs")
-    .append("linearGradient")
-    .attr("id", gradientId)
-    .attr("x1", "0%")
-    .attr("x2", "100%");
-
-  RATE_COLORS.forEach((c, i) => {
-    linear
-      .append("stop")
-      .attr("offset", `${(100 * i) / (RATE_COLORS.length - 1)}%`)
-      .attr("stop-color", c);
-  });
-
-  svg
-    .append("rect")
-    .attr("width", 120)
-    .attr("height", 12)
-    .attr("rx", 4)
-    .style("fill", `url(#${gradientId})`);
-
-  legend.append("span").attr("class", "map-legend__label").text("Low");
-  legend.append("span").attr("class", "map-legend__label").text("High");
 }
 
 function createScatter() {
@@ -265,7 +384,7 @@ function createScatter() {
     dots
       .attr("cx", (d) => zx(d.povertyPct))
       .attr("cy", (d) => zy(d.crimeRate))
-      .attr("fill", (d) => colorScale(d.crimeRate))
+      .attr("fill", (d) => crimeColorScale(d.crimeRate))
       .classed("dot--dimmed", (d) => anyFilter && !isHighlighted(d, zx, zy))
       .classed(
         "dot--active",
@@ -348,46 +467,62 @@ function createMap() {
     });
   gMapBrush.call(mapBrush);
 
-  function render() {
+  const features = geo.features
+    .map((feature) => {
+      const areaId = Number(feature.properties.area);
+      const row = areaById.get(areaId);
+      return { feature, areaId, row };
+    })
+    .filter((d) => d.row);
+
+  const paths = gAreas
+    .selectAll("path.map-area")
+    .data(features, (d) => d.areaId)
+    .join("path")
+    .attr("class", "map-area")
+    .attr("d", (d) => path(d.feature))
+    .attr("fill", (d) => mapColor(d.row))
+    .on("click", (event, d) => {
+      event.stopPropagation();
+      state.selectedArea =
+        state.selectedArea === d.areaId ? null : d.areaId;
+      if (state.selectedArea) {
+        state.suppressSelectionClear = true;
+        gMapBrush.call(mapBrush.move, null);
+        state.mapBrush = null;
+        state.suppressSelectionClear = false;
+      }
+      update();
+    })
+    .on("mouseover", (event, d) => showMapTooltip(event, d.row))
+    .on("mousemove", moveTooltip)
+    .on("mouseout", hideTooltip);
+
+  function render(animate = false) {
     const { zx, zy } = scatterChart.zoomedScales();
     const anyFilter = anyFilterActive();
 
-    const features = geo.features
-      .map((feature) => {
-        const areaId = Number(feature.properties.area);
-        const row = areaById.get(areaId);
-        return { feature, areaId, row };
-      })
-      .filter((d) => d.row);
+    paths.attr("class", (d) => {
+      let cls = "map-area";
+      const highlighted = isHighlighted(d.row, zx, zy);
+      if (anyFilter && !highlighted) cls += " map-area--dimmed";
+      if (state.selectedArea === d.areaId) cls += " map-area--selected";
+      return cls;
+    });
 
-    gAreas
-      .selectAll("path.map-area")
-      .data(features, (d) => d.areaId)
-      .join("path")
-      .attr("class", (d) => {
-        let cls = "map-area";
-        const highlighted = isHighlighted(d.row, zx, zy);
-        if (anyFilter && !highlighted) cls += " map-area--dimmed";
-        if (state.selectedArea === d.areaId) cls += " map-area--selected";
-        return cls;
-      })
-      .attr("d", (d) => path(d.feature))
-      .attr("fill", (d) => colorScale(d.row.crimeRate))
-      .on("click", (event, d) => {
-        event.stopPropagation();
-        state.selectedArea =
-          state.selectedArea === d.areaId ? null : d.areaId;
-        if (state.selectedArea) {
-          state.suppressSelectionClear = true;
-          gMapBrush.call(mapBrush.move, null);
-          state.mapBrush = null;
-          state.suppressSelectionClear = false;
-        }
-        update();
-      })
-      .on("mouseover", (event, d) => showMapTooltip(event, d.row))
-      .on("mousemove", moveTooltip)
-      .on("mouseout", hideTooltip);
+    const fillSelection = animate
+      ? paths
+          .transition()
+          .duration(MAP_TRANSITION_MS)
+          .ease(d3.easeCubicInOut)
+      : paths;
+
+    fillSelection.attrTween("fill", function (d) {
+      const previous = d3.color(d3.select(this).attr("fill"));
+      const next = d3.color(mapColor(d.row));
+      const interp = d3.interpolateRgb(previous, next);
+      return (t) => interp(t);
+    });
   }
 
   function clearBrush() {
@@ -407,11 +542,15 @@ function wireControls() {
     mapChart.clearBrush();
     update();
   });
+
+  d3.selectAll(".map-metric__btn").on("click", function () {
+    setMapMetric(d3.select(this).attr("data-metric"));
+  });
 }
 
-function update() {
+function update({ animateMap = false } = {}) {
   scatterChart.render();
-  mapChart.render();
+  mapChart.render(animateMap);
   renderStatus();
 }
 
@@ -453,7 +592,21 @@ function showScatterTooltip(event, d) {
 }
 
 function showMapTooltip(event, d) {
-  showScatterTooltip(event, d);
+  const metric = mapMetricConfig();
+  const metricValue = metric.value(d);
+
+  tooltip
+    .html(
+      `<div class="tooltip__title">${d.name}</div>` +
+        `<div class="tooltip__row"><span>${metric.label}</span><strong>${metric.format(metricValue)}</strong></div>` +
+        `<div class="tooltip__row"><span>Crime rate</span><strong>${fmtRate(d.crimeRate)} / 1k</strong></div>` +
+        `<div class="tooltip__row"><span>Poverty</span><strong>${fmtPct(d.povertyPct)}</strong></div>` +
+        `<div class="tooltip__row"><span>Total crimes</span><strong>${fmtCount(d.totalCrimes)}</strong></div>` +
+        `<div class="tooltip__row"><span>Population</span><strong>${fmtCount(d.population)}</strong></div>`
+    )
+    .classed("tooltip--visible", true)
+    .attr("aria-hidden", "false");
+  moveTooltip(event);
 }
 
 function moveTooltip(event) {

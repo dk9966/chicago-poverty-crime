@@ -18,8 +18,8 @@
 
     <section class="controls" aria-label="Dashboard filters">
       <div class="controls__group">
-        <span class="controls__label">Crime rate scale</span>
-        <ul class="map-legend" id="map-legend" aria-label="Crime rate color scale"></ul>
+        <span class="controls__label">Scatter color scale</span>
+        <ul class="map-legend" id="scatter-legend" aria-label="Scatter crime rate color scale"></ul>
       </div>
       <button class="controls__reset" id="reset" type="button">Reset filters</button>
     </section>
@@ -37,11 +37,33 @@
       </section>
 
       <section class="panel panel--map">
-        <header class="panel__head">
-          <h2 class="panel__title">2 &middot; Crime rate by community area</h2>
-          <p class="panel__hint">
-            Click an area or drag to box select &middot; click empty space to deselect
-          </p>
+        <header class="panel__head panel__head--map">
+          <div class="panel__head-row">
+            <h2 class="panel__title">2 &middot; Community area map</h2>
+            <div class="map-metric" role="group" aria-label="Map color metric">
+              <span class="map-metric__indicator" id="map-metric-indicator"></span>
+              <button
+                type="button"
+                class="map-metric__btn map-metric__btn--active"
+                data-metric="crimeRate"
+              >
+                Crime rate
+              </button>
+              <button type="button" class="map-metric__btn" data-metric="povertyPct">
+                Poverty rate
+              </button>
+            </div>
+          </div>
+          <div class="panel__meta">
+            <ul
+              class="map-legend map-legend--panel"
+              id="map-legend"
+              aria-label="Map color scale"
+            ></ul>
+            <p class="panel__hint">
+              Click an area or drag to box select &middot; click empty space to deselect
+            </p>
+          </div>
         </header>
         <div class="panel__chart" id="map-chart"></div>
       </section>
