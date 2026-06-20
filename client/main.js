@@ -21,6 +21,7 @@ const state = {
   brush: null,
   selectedArea: null,
   transform: d3.zoomIdentity,
+  suppressSelectionClear: false,
 };
 
 const tooltip = d3.select("#tooltip");
@@ -91,6 +92,11 @@ function buildMapLegend() {
 
   legend.append("span").attr("class", "map-legend__label").text("Low");
   legend.append("span").attr("class", "map-legend__label").text("High");
+}
+
+function clearSelection() {
+  state.selectedArea = null;
+  update();
 }
 
 function createScatter() {
@@ -166,8 +172,10 @@ function createScatter() {
       event.stopPropagation();
       state.selectedArea = state.selectedArea === d.id ? null : d.id;
       if (state.selectedArea) {
+        state.suppressSelectionClear = true;
         gBrush.call(brush.move, null);
         state.brush = null;
+        state.suppressSelectionClear = false;
       }
       update();
     })
@@ -183,6 +191,13 @@ function createScatter() {
     ])
     .on("brush end", (event) => {
       state.brush = event.selection;
+      if (
+        !event.selection &&
+        event.sourceEvent &&
+        !state.suppressSelectionClear
+      ) {
+        state.selectedArea = null;
+      }
       update();
     });
   gBrush.call(brush);
@@ -271,6 +286,14 @@ function createMap() {
     .append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
+  root
+    .append("rect")
+    .attr("class", "map-bg")
+    .attr("width", innerW)
+    .attr("height", innerH)
+    .attr("fill", "transparent")
+    .on("click", () => clearSelection());
+
   const projection = d3.geoMercator().fitSize([innerW, innerH], geo);
   const path = d3.geoPath().projection(projection);
   const gAreas = root.append("g");
@@ -303,6 +326,7 @@ function createMap() {
       .attr("d", (d) => path(d.feature))
       .attr("fill", (d) => colorScale(d.row.crimeRate))
       .on("click", (event, d) => {
+        event.stopPropagation();
         state.selectedArea =
           state.selectedArea === d.areaId ? null : d.areaId;
         update();
