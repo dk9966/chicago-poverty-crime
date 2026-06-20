@@ -61,13 +61,27 @@ Sources:
 
 Crime rate = total reported incidents ÷ 6 years ÷ population × 1,000.
 
-## Deploy (for the handed-in URL)
+## Deploy (GitHub Pages)
 
-It's a static site, so any static host works. GitHub Pages:
+The repo includes a GitHub Actions workflow (`.github/workflows/deploy.yml`) that
+publishes the `client/` folder on every push to `main`.
 
-1. Push the repo to GitHub.
-2. Settings -> Pages -> deploy from the folder containing `index.html` (`.../client`).
-3. Submit that URL.
+1. Create a public GitHub repo and push this project:
+
+```bash
+gh auth login
+gh repo create chicago-poverty-crime --public --source=. --remote=origin --push
+```
+
+2. In the repo on GitHub: **Settings → Pages → Build and deployment → Source**,
+   choose **GitHub Actions** (not “Deploy from a branch”).
+
+3. After the first push, open **Actions** and wait for “Deploy to GitHub Pages” to
+   finish. Your URL will be:
+
+`https://<your-github-username>.github.io/chicago-poverty-crime/`
+
+Submit that URL for the assignment.
 
 ---
 
